@@ -10,7 +10,7 @@ CREATE TABLE oficina (
   codigo_postal VARCHAR(10) NOT NULL,
   telefono VARCHAR(20) NOT NULL,
   linea_direccion1 VARCHAR(50) NOT NULL,
-  linea_direccion2 VARCHAR(50) DEFAULT NULL,
+  linea_direccion2 VARCHAR(50) DEFAULT 'NO TIENE',
   PRIMARY KEY (codigo_oficina)
 );
 
@@ -38,7 +38,7 @@ CREATE TABLE gama_producto (
 );
 
 CREATE TABLE cliente (
-  codigo_cliente INTEGER NOT NULL,
+  codigo_cliente INTEGER AUTO_INCREMENT  NOT NULL,
   nombre_cliente VARCHAR(50) NOT NULL,
   nombre_contacto VARCHAR(30) DEFAULT NULL,
   apellido_contacto VARCHAR(30) DEFAULT NULL,
@@ -54,7 +54,7 @@ CREATE TABLE cliente (
   limite_credito NUMERIC(15,2) DEFAULT NULL,
   PRIMARY KEY (codigo_cliente),
   FOREIGN KEY (codigo_empleado_rep_ventas) REFERENCES empleado (codigo_empleado)
-);
+) AUTO_INCREMENT = 10;
 
 CREATE TABLE pedido (
   codigo_pedido INTEGER NOT NULL,
@@ -929,19 +929,83 @@ INSERT INTO pago VALUES (35,'PayPal','ak-std-000025','2007-10-06',3321);
 INSERT INTO pago VALUES (38,'PayPal','ak-std-000026','2006-05-26',1171);
 
 
-
 /* SENTENCIAS DML PARA PRÁCTICAR SIN MORIR EN EL INTENTO */
 /* EJEMPLO PARA CONOCER LAS COLUMNAS DE UNA TABLA*/
+
+/* Reto 1 - Retorna un listado con el código de oficina y la ciudad donde hay oficinas. */ 
+
+show tables;
+describe oficina;
+select codigo_oficina, ciudad, pais, region, codigo_postal
+telefono, linea_direccion1, linea_direccion2
+from oficina;
+
+select codigo_oficina, ciudad
+from oficina;
+
+/* Reto 2 - Retorna un listado con la ciudad y el teléfono de las oficinas de España.*/
+
+show tables;
+describe oficina;
+
+select ciudad, telefono, pais from oficina
+where pais = 'ESPAÑA';
+
+select upper(ciudad), telefono, pais from oficina
+where upper(pais) = 'ESPAÑA';
+
+select lower(ciudad), telefono, pais from oficina
+where lower(pais) = 'ESPAÑA';
+
+
+select * from oficina;
+
+
+
+select codigo_oficina,
+ciudad,
+pais,
+region,
+codigo_postal,
+telefono,
+linea_direccion1,
+linea_direccion2 
+from oficina;
+
+
+select codigo_oficina, ciudad 
+from oficina;
+
+
+
+
 DESCRIBE EMPLEADO;
 
 SELECT codigo_empleado, nombre, apellido1, apellido2,
 extension, email, codigo_oficina, codigo_jefe
 puesto FROM EMPLEADO;
 
-/* RETO 1 - Retorna un listado con el código de oficina y 
-la ciudad donde hay oficinas */
+/* RETO 3 - Retorna un listado con el nombre, apellidos y 
+email de los empleados cuyo jefe tiene un código de jefe igual a 7. */
 
-describe oficina;
+show tables;
+describe empleado;
+select * from empleado;
+
+select nombre, apellido1, apellido2, email from empleado
+where codigo_jefe = 7;
+
+select nombre as Nombre, concat(apellido1,' ',apellido2) as Apellidos, email from empleado
+where codigo_jefe = 7;
+
+
+
+select o.codigo_oficina as cod_oficina, o.ciudad country,
+concat(o.codigo_oficina,' - ', o.ciudad) as cod_ciudad_oficina
+ from oficina o;
+
+
+
 
 select o.codigo_oficina as cod_oficina, o.ciudad country,
 concat(o.codigo_oficina,' - ', o.ciudad) as cod_ciudad_oficina
@@ -953,11 +1017,20 @@ concat(o.codigo_oficina,' - ', o.ciudad) as cod_ciudad_oficina
  select ciudad, telefono, pais from oficina
  where upper(pais) = 'ESPAÑA';
  
- /* RETO 3 - Retorna el listado con todos los clientes que sean
- de la ciudad de Madrid y cuyo representante de ventas tenga 
- el código de empleado 11 ó 30. */
+ /* RETO 4 - Retorna el nombre del puesto, nombre, apellidos y email 
+ del jefe de la empresa. */
 
-/*RETO 4 */
+select puesto, nombre as Nombre, concat(apellido1,' ',apellido2) as Apellidos, email 
+from empleado
+where puesto  = 'Director General';
+
+select puesto, nombre as Nombre, concat(apellido1,' ',apellido2) as Apellidos, email 
+from empleado
+where codigo_jefe  is null;
+
+show tables;
+
+select * from empleado;
  
  describe cliente;
  describe empleado;
@@ -990,10 +1063,67 @@ select count(*) total_registros /*cl.ciudad, em.codigo_empleado */
  and em.codigo_empleado in (11,30)
  group by em.codigo_empleado; 
 
- select cl.ciudad, count(*) total_registros /*cl.ciudad, em.codigo_empleado */
+
+/*SUBCONSULTA PARA VOLVER UN SELECT EN TABLA*/
+select tabla.ciudad, tabla.total_registros 
+from (select cl.ciudad , count(*) total_registros /*cl.ciudad, em.codigo_empleado */
  from cliente cl,  empleado em 
  where em.codigo_empleado = cl.codigo_empleado_rep_ventas
  and em.codigo_empleado in (11,30)
- group by cl.ciudad
- order by cl.ciudad desc; 
+ group by cl.ciudad) tabla
+ union
+ select ('Barcelona') ciudad, ('10') total_registros from dual
+ order by ciudad desc;
+ 
+ 
+ select '01' codigo, 'Bruno Diaz' empleado from dual
+ union
+ select '02' codigo, 'Clark Kent' empleado from dual;
+
+
+SELECT SUM(TABLA2.TOTAL_REGISTROS) SUMA_REGISTROS, 
+GROUP_CONCAT(TABLA2.CIUDAD ORDER BY TABLA2.CIUDAD SEPARATOR ';') LISTA_CIUDAD
+ FROM(select tabla.ciudad, CAST(tabla.total_registros AS SIGNED) TOTAL_REGISTROS 
+from (select cl.ciudad , count(*) total_registros /*cl.ciudad, em.codigo_empleado */
+ from cliente cl,  empleado em 
+ where em.codigo_empleado = cl.codigo_empleado_rep_ventas
+ and em.codigo_empleado in (11,30)
+ group by cl.ciudad) tabla
+ union
+ select ('Barcelona') ciudad, (10) total_registros from dual) TABLA2;
+ 
+ /*USO DE RELLENO DE CARACTERES CON LPAD Y RPAD*/
+ select cl.ciudad , count(*) total_registros, 
+ LPAD(count(*),8,'0') total_registros, RPAD(count(*),8,'0') total_registros 
+ from cliente cl,  empleado em 
+ where em.codigo_empleado = cl.codigo_empleado_rep_ventas
+ and em.codigo_empleado in (11,30)
+ group by cl.ciudad;
+ 
+ DESCRIBE PAGO;
+ 
+  SELECT COUNT( CODIGO_CLIENTE) VALOR FROM PAGO;
+ SELECT COUNT( DISTINCT CODIGO_CLIENTE) FROM PAGO;
+ 
+ 
+ DESCRIBE CLIENTE;
+ 
+ SELECT codigo_cliente, nombre_cliente, 
+ nombre_contacto, apellido_contacto, pais
+ FROM CLIENTE
+ WHERE CODIGO_CLIENTE IN ( 
+  SELECT CODIGO_CLIENTE
+  FROM PAGO 
+  WHERE (TOTAL >= 2500 AND TOTAL <= 4000))
+  
+  
+   SELECT codigo_cliente, nombre_cliente, 
+ nombre_contacto, apellido_contacto, pais
+ FROM CLIENTE, (SELECT CODIGO_CLIENTE
+  FROM PAGO
+  WHERE (TOTAL >= 2500 AND TOTAL <= 4000))
+
+SELECT *
+  FROM PAGO 
+  WHERE (TOTAL >= 2500 AND TOTAL <= 4000)
 
